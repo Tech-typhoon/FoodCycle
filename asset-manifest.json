@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/FoodCycle/static/css/main.2f7ced2b.css",
-    "main.js": "/FoodCycle/static/js/main.a0cd8950.js",
+    "main.css": "/FoodCycle/static/css/main.d7985678.css",
+    "main.js": "/FoodCycle/static/js/main.f3cb8408.js",
     "static/js/453.b98f23b0.chunk.js": "/FoodCycle/static/js/453.b98f23b0.chunk.js",
     "index.html": "/FoodCycle/index.html",
-    "main.2f7ced2b.css.map": "/FoodCycle/static/css/main.2f7ced2b.css.map",
-    "main.a0cd8950.js.map": "/FoodCycle/static/js/main.a0cd8950.js.map",
+    "main.d7985678.css.map": "/FoodCycle/static/css/main.d7985678.css.map",
+    "main.f3cb8408.js.map": "/FoodCycle/static/js/main.f3cb8408.js.map",
     "453.b98f23b0.chunk.js.map": "/FoodCycle/static/js/453.b98f23b0.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.2f7ced2b.css",
-    "static/js/main.a0cd8950.js"
+    "static/css/main.d7985678.css",
+    "static/js/main.f3cb8408.js"
   ]
 }
