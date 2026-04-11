@@ -1,250 +1,284 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, Polyline, useMap } from 'react-leaflet';
+import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { useAuth } from '../context/AuthContext';
 
+// Fix for default markers in Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-const defaultCenter = [22.57, 88.36];
-
-function LocationUpdater({ location, selectedItem }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (selectedItem && selectedItem.position) {
-      map.setView(selectedItem.position, 16, { animate: true });
-    } else if (location) {
-      map.setView(location, 14, { animate: true });
-    }
-  }, [location, selectedItem, map]);
-
-  return null;
-}
-
 function MapPanel({ openClaim }) {
-  const [location, setLocation] = useState(null);
-  const [locationError, setLocationError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all');
+  const { user } = useAuth();
+  const [userLocation, setUserLocation] = useState([28.7041, 77.1025]); // Default Delhi
   const [selectedItem, setSelectedItem] = useState(null);
 
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setLocationError('GPS is not supported by this browser.');
-      return;
-    }
-
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        setLocation([position.coords.latitude, position.coords.longitude]);
-        setLocationError('');
-      },
-      () => {
-        setLocationError('Please allow location access to show live GPS on the map.');
-      },
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 }
-    );
-
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
-
-  const basePosition = location || defaultCenter;
-
-  const mapItems = useMemo(() => [
+  const foodItems = [
     {
       id: 1,
-      title: 'Freshly baked sourdough',
-      source: 'Green Wheat Bakery',
-      dist: '0.3 km',
-      price: 'Free',
-      until: '2 hrs',
-      type: 'donation',
-      position: [basePosition[0] + 0.0025, basePosition[1] + 0.0023],
+      title: 'Fresh Vegetables Mix',
+      provider: 'Green Mart Store',
+      price: '₹150',
+      coordinates: [28.7041, 77.1025],
+      dist: '2.5 km',
+      until_text: '04:30 PM',
+      image: '🥗',
     },
     {
       id: 2,
-      title: 'Catered event leftovers',
-      source: 'Spice Garden Caterers',
-      dist: '0.7 km',
-      price: '₹80',
-      until: '4 hrs',
-      type: 'discounted',
-      position: [basePosition[0] - 0.0019, basePosition[1] + 0.0031],
+      title: 'Cooked Rice & Curry',
+      provider: 'Local Restaurant',
+      price: '₹200',
+      coordinates: [28.6139, 77.2090],
+      dist: '1.2 km',
+      until_text: '02:30 PM',
+      image: '🍛',
     },
     {
       id: 3,
-      title: 'Community pantry share',
-      source: 'City Food Bank',
-      dist: '1.1 km',
-      price: 'Free',
-      until: 'Tomorrow',
-      type: 'community',
-      position: [basePosition[0] + 0.0038, basePosition[1] - 0.0022],
+      title: 'Bakery Items - Bread',
+      provider: 'City Bakery',
+      price: '₹100',
+      coordinates: [28.7275, 77.0470],
+      dist: '3.8 km',
+      until_text: '03:30 PM',
+      image: '🥖',
     },
     {
       id: 4,
-      title: 'Organic vegetable box',
-      source: 'Farm Direct Hub',
+      title: 'Fresh Fruits',
+      provider: 'Organic Fruits Store',
+      price: '₹180',
+      coordinates: [28.6692, 77.0601],
       dist: '1.8 km',
-      price: '₹150',
-      until: '6 hrs',
-      type: 'discounted',
-      position: [basePosition[0] - 0.0032, basePosition[1] - 0.0017],
+      until_text: '05:30 PM',
+      image: '🍎',
     },
-    {
-      id: 5,
-      title: 'Dairy surplus',
-      source: 'Morning Fresh Dairy',
-      dist: '2.4 km',
-      price: 'Free',
-      until: '3 hrs',
-      type: 'donation',
-      position: [basePosition[0] + 0.0042, basePosition[1] + 0.0011],
-    },
-  ], [basePosition]);
+  ];
 
-  const filteredItems = mapItems.filter((item) => {
-    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.source.toLowerCase().includes(searchTerm.toLowerCase());
+  useEffect(() => {
+    // Get user's location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation([latitude, longitude]);
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+        }
+      );
+    }
+  }, []);
 
-    const matchesFilter = filterType === 'all' ||
-      (filterType === 'free' && item.price === 'Free') ||
-      (filterType === 'paid' && item.price !== 'Free');
-
-    return matchesSearch && matchesFilter;
-  });
-
-  return (
-    <div className="panel active">
-      <div className="map-container">
-        <div className="map-area">
-          <MapContainer
-            center={basePosition}
-            zoom={14}
-            scrollWheelZoom={true}
-            style={{ width: '100%', minHeight: '460px', borderRadius: '14px' }}
-          >
-            <LocationUpdater location={location} selectedItem={selectedItem} />
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-            {filteredItems.map((item) => (
-              <Marker
-                key={item.id}
-                position={item.position}
-                eventHandlers={{
-                  click: () => {
-                    setSelectedItem(item);
-                    openClaim({
-                      title: item.title,
-                      provider: item.source,
-                      dist: item.dist,
-                      price: item.price,
-                      until: item.until,
-                    });
-                  },
-                }}
-              >
-                <Popup>
-                  <strong>{item.title}</strong>
-                  <div>{item.source}</div>
-                  <div>{item.price} · {item.dist}</div>
-                </Popup>
-              </Marker>
-            ))}
-
-            {selectedItem && location && (
-              <>
-                <CircleMarker
-                  center={location}
-                  pathOptions={{ color: '#0F6E56', fillColor: '#0F6E56', fillOpacity: 0.8 }}
-                  radius={10}
-                >
-                  <Popup>You are here</Popup>
-                </CircleMarker>
-                <Polyline
-                  positions={[location, selectedItem.position]}
-                  pathOptions={{ color: '#FF6B35', weight: 3, opacity: 0.7 }}
-                />
-              </>
-            )}
-          </MapContainer>
-
-          {locationError && (
-            <div className="map-empty" style={{ marginTop: '12px' }}>
-              {locationError}
-            </div>
-          )}
-        </div>
-
-        <div className="map-sidebar">
-          <div className="map-sidebar-header">
-            <div className="map-sidebar-title">Find nearby listings</div>
-            <input
-              type="text"
-              placeholder="Search food or provider..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="map-search"
-            />
-            <div className="map-filters">
-              <button
-                className={`btn btn-sm ${filterType === 'all' ? 'btn-primary' : ''}`}
-                onClick={() => setFilterType('all')}
-              >
-                All
-              </button>
-              <button
-                className={`btn btn-sm ${filterType === 'free' ? 'btn-primary' : ''}`}
-                onClick={() => setFilterType('free')}
-              >
-                Free
-              </button>
-              <button
-                className={`btn btn-sm ${filterType === 'paid' ? 'btn-primary' : ''}`}
-                onClick={() => setFilterType('paid')}
-              >
-                Paid
-              </button>
-            </div>
+  if (!user) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.authPrompt}>
+          <div style={styles.promptBox}>
+            <p style={styles.promptText}>👤 Please sign in to view the map and claim food items</p>
           </div>
-
-          <div style={{ fontSize: '12px', fontWeight: '500', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>
-            {filteredItems.length} listings nearby
-          </div>
-
-          {filteredItems.map((item) => (
-            <div
-              key={item.id}
-              className="map-item"
-              onClick={() => {
-                setSelectedItem(item);
-                openClaim({ title: item.title, provider: item.source, dist: item.dist, price: item.price, until: item.until });
-              }}
-            >
-              <div className="map-item-title">{item.title}</div>
-              <div className="map-item-dist">{item.source} · {item.dist}</div>
-              <div className="map-item-badge" style={{ color: item.price === 'Free' ? 'var(--teal)' : 'var(--amber)' }}>
-                {item.price} · {item.until}
-              </div>
-            </div>
-          ))}
-
-          {filteredItems.length === 0 && (
-            <div className="map-empty">
-              No listings match your search
-            </div>
-          )}
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.mapWrapper}>
+        <MapContainer
+          center={userLocation}
+          zoom={13}
+          style={styles.map}
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; OpenStreetMap contributors'
+          />
+
+          {/* User location */}
+          <Marker position={userLocation}>
+            <Popup>Your Location</Popup>
+          </Marker>
+
+          {/* User search radius */}
+          <Circle
+            center={userLocation}
+            radius={3000}
+            pathOptions={{ color: 'blue', fillOpacity: 0.1 }}
+          />
+
+          {/* Food item markers */}
+          {foodItems.map((item) => (
+            <Marker
+              key={item.id}
+              position={item.coordinates}
+              eventHandlers={{
+                click: () => setSelectedItem(item),
+              }}
+            >
+              <Popup>{item.image} {item.title}</Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      </div>
+
+      {selectedItem && (
+        <div style={styles.sidebar}>
+          <button
+            style={styles.closeBtn}
+            onClick={() => setSelectedItem(null)}
+          >
+            ✕
+          </button>
+
+          <div style={styles.sidebarImage}>{selectedItem.image}</div>
+
+          <h3 style={styles.sidebarTitle}>{selectedItem.title}</h3>
+          <p style={styles.sidebarProvider}>from {selectedItem.provider}</p>
+
+          <div style={styles.sidebarDetails}>
+            <div style={styles.detailRow}>
+              <span style={styles.detailLabel}>Distance</span>
+              <span style={styles.detailValue}>{selectedItem.dist}</span>
+            </div>
+            <div style={styles.detailRow}>
+              <span style={styles.detailLabel}>Price</span>
+              <span style={styles.detailValue}>{selectedItem.price}</span>
+            </div>
+            <div style={styles.detailRow}>
+              <span style={styles.detailLabel}>Available until</span>
+              <span style={styles.detailValue}>{selectedItem.until_text}</span>
+            </div>
+          </div>
+
+          <button
+            style={styles.claimBtn}
+            onClick={() => {
+              openClaim(selectedItem);
+              setSelectedItem(null);
+            }}
+          >
+            Claim this item
+          </button>
+        </div>
+      )}
     </div>
   );
 }
+
+const styles = {
+  container: {
+    width: '100%',
+    height: 'calc(100vh - 80px)',
+    position: 'relative',
+    display: 'flex',
+  },
+  authPrompt: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    background: '#f7f6f2',
+  },
+  promptBox: {
+    background: '#ffffff',
+    border: '2px dashed #639922',
+    borderRadius: '14px',
+    padding: '32px',
+    textAlign: 'center',
+    maxWidth: '400px',
+  },
+  promptText: {
+    color: '#3B6D11',
+    fontSize: '16px',
+    fontWeight: '500',
+    margin: '0',
+  },
+  mapWrapper: {
+    flex: '1',
+    position: 'relative',
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+  sidebar: {
+    width: '320px',
+    background: '#ffffff',
+    padding: '20px',
+    borderLeft: '1px solid #e0ded8',
+    overflowY: 'auto',
+    position: 'relative',
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: '12px',
+    right: '12px',
+    background: 'none',
+    border: 'none',
+    fontSize: '24px',
+    cursor: 'pointer',
+    color: '#888780',
+  },
+  sidebarImage: {
+    fontSize: '60px',
+    height: '100px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#f1efe8',
+    borderRadius: '10px',
+    marginBottom: '16px',
+    marginTop: '24px',
+  },
+  sidebarTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#2C2C2A',
+    margin: '0 0 4px 0',
+  },
+  sidebarProvider: {
+    fontSize: '12px',
+    color: '#888780',
+    margin: '0 0 16px 0',
+  },
+  sidebarDetails: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    marginBottom: '20px',
+    paddingBottom: '16px',
+    borderBottom: '1px solid #e0ded8',
+  },
+  detailRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '12px',
+  },
+  detailLabel: {
+    color: '#888780',
+    fontWeight: '500',
+  },
+  detailValue: {
+    color: '#3B6D11',
+    fontWeight: '600',
+  },
+  claimBtn: {
+    width: '100%',
+    padding: '12px 16px',
+    background: '#3B6D11',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'background 0.2s',
+  },
+};
 
 export default MapPanel;

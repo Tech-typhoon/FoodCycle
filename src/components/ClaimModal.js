@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
-function ClaimModal({ data, closeModal }) {
-  const [name, setName] = useState('');
+function ClaimModal({ data, closeModal, onClaimSuccess }) {
+  const { user } = useAuth();
+  const [name, setName] = useState(user?.displayName || '');
   const [mobile, setMobile] = useState('');
   const [address, setAddress] = useState('');
 
@@ -10,7 +12,31 @@ function ClaimModal({ data, closeModal }) {
       alert('Please fill in all required fields.');
       return;
     }
-    alert(`Claim confirmed! Check your contact for pickup details.\n\nName: ${name}\nMobile: ${mobile}\nAddress: ${address}`);
+
+    // Store claim data
+    const claimData = {
+      id: Date.now(),
+      title: data.title,
+      provider: data.provider,
+      price: data.price,
+      name: name,
+      mobile: mobile,
+      address: address,
+      coordinates: data.coordinates || [28.7041, 77.1025], // Default to Delhi if not available
+      claimedAt: new Date().toISOString(),
+      status: 'pending',
+    };
+
+    // Save to localStorage
+    const claims = JSON.parse(localStorage.getItem('userClaims') || '[]');
+    claims.push(claimData);
+    localStorage.setItem('userClaims', JSON.stringify(claims));
+
+    // Call the success callback with claim data
+    if (onClaimSuccess) {
+      onClaimSuccess(claimData);
+    }
+
     closeModal();
   };
 

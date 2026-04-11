@@ -1,86 +1,218 @@
-import React, { useState, useEffect } from 'react';
-
-const listings = [
-  { id: 1, title: "Freshly baked sourdough loaves", source: "Green Wheat Bakery", type: "donation", category: "Baked goods", qty: "2 loaves", window: "2 hrs", price: null, location: "Baker St, Sector 4", urgency: "high", tags: ["Baked goods"] },
-  { id: 2, title: "Catered biryani and sides", source: "Spice Garden Caterers", type: "discounted", category: "Cooked meals", qty: "8 meal boxes", window: "4 hrs", price: "₹80/box", location: "Event Hall Rd", urgency: "high", tags: ["Cooked meals"] },
-  { id: 3, title: "Organic vegetable surplus box", source: "Farm Direct Hub", type: "discounted", category: "Produce", qty: "5 boxes (~3 kg each)", window: "6 hrs", price: "₹150/box", location: "MG Road Market", urgency: "med", tags: ["Produce"] },
-  { id: 4, title: "Community pantry share", source: "City Food Bank", type: "community", category: "Mixed", qty: "Open access", window: "Tomorrow 5 PM", price: null, location: "Church Lane, Old Town", urgency: "low", tags: ["Mixed"] },
-  { id: 5, title: "Dairy surplus — milk & paneer", source: "Morning Fresh Dairy", type: "donation", category: "Dairy", qty: "4 L milk + 500 g paneer", window: "3 hrs", price: null, location: "Dairy Colony", urgency: "high", tags: ["Dairy"] },
-  { id: 6, title: "Restaurant curry portions", source: "Namaste Dhaba", type: "discounted", category: "Cooked meals", qty: "15 portions", window: "Today 9 PM", price: "₹60/portion", location: "Station Road", urgency: "med", tags: ["Cooked meals"] },
-  { id: 7, title: "Fruit platter leftovers", source: "Galaxy Events", type: "donation", category: "Produce", qty: "~2 kg mixed fruit", window: "5 hrs", price: null, location: "Event Center, Hill Top", urgency: "med", tags: ["Produce"] },
-  { id: 8, title: "Bread & pastry mix", source: "Corner Bakehouse", type: "community", category: "Baked goods", qty: "20+ items", window: "Tomorrow AM", price: null, location: "Market Square", urgency: "low", tags: ["Baked goods"] },
-];
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 function BrowsePanel({ openClaim }) {
-  const [filteredListings, setFilteredListings] = useState(listings);
-  const [currentFilter, setCurrentFilter] = useState('all');
-
-  useEffect(() => {
-    const filtered = currentFilter === 'all' ? listings
-      : currentFilter === 'urgent' ? listings.filter(l => l.urgency === 'high')
-      : listings.filter(l => l.type === currentFilter);
-    setFilteredListings(filtered);
-  }, [currentFilter]);
-
-  const urgencyBadge = (u) => {
-    if (u === 'high') return <span className="urgency urgency-high"><span className="urgency-dot dot-high"></span>Expiring soon</span>;
-    if (u === 'med') return <span className="urgency urgency-med"><span className="urgency-dot dot-med"></span>Today</span>;
-    return <span className="urgency urgency-low"><span className="urgency-dot dot-low"></span>Available</span>;
-  };
-
-  const typeTag = (t) => {
-    if (t === 'donation') return <span className="tag tag-donation">Free / Donation</span>;
-    if (t === 'discounted') return <span className="tag tag-discounted">Discounted</span>;
-    return <span className="tag tag-community">Community</span>;
-  };
-
-  const bannerClass = (t) => {
-    if (t === 'donation') return 'banner-donation';
-    if (t === 'discounted') return 'banner-discounted';
-    return 'banner-community';
-  };
+  const { user } = useAuth();
+  const [foodItems] = useState([
+    {
+      id: 1,
+      title: 'Fresh Vegetables Mix',
+      provider: 'Green Mart Store',
+      price: '₹150',
+      coordinates: [28.7041, 77.1025],
+      dist: '2.5 km',
+      until: '4 hours',
+      until_text: '04:30 PM',
+      image: '🥗',
+    },
+    {
+      id: 2,
+      title: 'Cooked Rice & Curry',
+      provider: 'Local Restaurant',
+      price: '₹200',
+      coordinates: [28.6139, 77.2090],
+      dist: '1.2 km',
+      until: '2 hours',
+      until_text: '02:30 PM',
+      image: '🍛',
+    },
+    {
+      id: 3,
+      title: 'Bakery Items - Bread',
+      provider: 'City Bakery',
+      price: '₹100',
+      coordinates: [28.7275, 77.0470],
+      dist: '3.8 km',
+      until: '3 hours',
+      until_text: '03:30 PM',
+      image: '🥖',
+    },
+    {
+      id: 4,
+      title: 'Fresh Fruits',
+      provider: 'Organic Fruits Store',
+      price: '₹180',
+      coordinates: [28.6692, 77.0601],
+      dist: '1.8 km',
+      until: '5 hours',
+      until_text: '05:30 PM',
+      image: '🍎',
+    },
+  ]);
 
   return (
-    <div className="panel active">
-      <div className="browse-header">
-        <div className="search-box">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.5" stroke="var(--gray-mid)" strokeWidth="1.5"/><path d="M11 11l3 3" stroke="var(--gray-mid)" strokeWidth="1.5" strokeLinecap="round"/></svg>
-          <input placeholder="Search food, location, provider..." />
-        </div>
-        <div className="filter-pills">
-          <div className={`pill ${currentFilter === 'all' ? 'active' : ''}`} onClick={() => setCurrentFilter('all')}>All</div>
-          <div className={`pill ${currentFilter === 'donation' ? 'active' : ''}`} onClick={() => setCurrentFilter('donation')}>Free / Donation</div>
-          <div className={`pill ${currentFilter === 'discounted' ? 'active' : ''}`} onClick={() => setCurrentFilter('discounted')}>Discounted</div>
-          <div className={`pill ${currentFilter === 'community' ? 'active' : ''}`} onClick={() => setCurrentFilter('community')}>Community orgs</div>
-          <div className={`pill ${currentFilter === 'urgent' ? 'active' : ''}`} onClick={() => setCurrentFilter('urgent')}>Expiring soon</div>
-        </div>
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>Available Food Listings</h1>
+        <p style={styles.subtitle}>Browse nearby food items available for claim</p>
       </div>
 
-      <div className="listings-grid">
-        {filteredListings.map(l => (
-          <div key={l.id} className="card">
-            <div className={`card-banner ${bannerClass(l.type)}`}></div>
-            <div className="card-body">
-              <div className="card-title">{l.title}</div>
-              <div className="card-source">{l.source} · {l.location}</div>
-              <div className="card-tags">{typeTag(l.type)}<span className="tag tag-type">{l.tags[0]}</span></div>
-              <div className="card-meta">
-                <div className="meta-item"><span className="meta-label">Quantity</span><span className="meta-value">{l.qty}</span></div>
-                <div className="meta-item"><span className="meta-label">Pickup window</span><span className="meta-value">{l.window}</span></div>
-              </div>
-              <div className="card-footer">
-                <div>
-                  <div className={`price ${l.price ? 'price-paid' : 'price-free'}`}>{l.price || 'Free'}</div>
-                  {urgencyBadge(l.urgency)}
-                </div>
-                <button className="btn btn-sm btn-claim" onClick={() => openClaim({ title: l.title, provider: l.source, dist: 'nearby', price: l.price || 'Free', until: l.window })}>Claim</button>
-              </div>
-            </div>
+      {!user ? (
+        <div style={styles.authPrompt}>
+          <div style={styles.promptBox}>
+            <p style={styles.promptText}>👤 Please sign in to browse and claim food items</p>
           </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div style={styles.listingsGrid}>
+          {foodItems.map((item) => (
+            <div key={item.id} style={styles.card}>
+              <div style={styles.cardImage}>{item.image}</div>
+              <div style={styles.cardContent}>
+                <h3 style={styles.cardTitle}>{item.title}</h3>
+                <p style={styles.cardProvider}>from {item.provider}</p>
+
+                <div style={styles.cardDetails}>
+                  <div style={styles.detail}>
+                    <span style={styles.detailLabel}>Distance</span>
+                    <span style={styles.detailValue}>{item.dist}</span>
+                  </div>
+                  <div style={styles.detail}>
+                    <span style={styles.detailLabel}>Price</span>
+                    <span style={styles.detailValue}>{item.price}</span>
+                  </div>
+                  <div style={styles.detail}>
+                    <span style={styles.detailLabel}>Available until</span>
+                    <span style={styles.detailValue}>{item.until_text}</span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                style={styles.claimBtn}
+                onClick={() => openClaim(item)}
+              >
+                Claim item
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
+const styles = {
+  container: {
+    padding: '24px',
+    maxWidth: '1200px',
+    margin: '0 auto',
+    background: '#f7f6f2',
+    minHeight: 'calc(100vh - 80px)',
+  },
+  header: {
+    marginBottom: '32px',
+    textAlign: 'center',
+  },
+  title: {
+    fontSize: '32px',
+    fontWeight: '700',
+    color: '#2C2C2A',
+    margin: '0 0 8px 0',
+  },
+  subtitle: {
+    fontSize: '14px',
+    color: '#888780',
+    margin: '0',
+  },
+  authPrompt: {
+    display: 'flex',
+    justifyContent: 'center',
+    padding: '40px 20px',
+  },
+  promptBox: {
+    background: '#ffffff',
+    border: '2px dashed #639922',
+    borderRadius: '14px',
+    padding: '32px',
+    textAlign: 'center',
+    maxWidth: '400px',
+  },
+  promptText: {
+    color: '#3B6D11',
+    fontSize: '16px',
+    fontWeight: '500',
+    margin: '0',
+  },
+  listingsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    gap: '20px',
+  },
+  card: {
+    background: '#ffffff',
+    borderRadius: '14px',
+    overflow: 'hidden',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+    transition: 'transform 0.2s, box-shadow 0.2s',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  cardImage: {
+    fontSize: '60px',
+    height: '120px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#f1efe8',
+  },
+  cardContent: {
+    padding: '16px',
+    flex: '1',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  cardTitle: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#2C2C2A',
+    margin: '0 0 4px 0',
+  },
+  cardProvider: {
+    fontSize: '12px',
+    color: '#888780',
+    margin: '0 0 12px 0',
+  },
+  cardDetails: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    marginBottom: '12px',
+  },
+  detail: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '12px',
+  },
+  detailLabel: {
+    color: '#888780',
+    fontWeight: '500',
+  },
+  detailValue: {
+    color: '#3B6D11',
+    fontWeight: '600',
+  },
+  claimBtn: {
+    padding: '10px 16px',
+    background: '#3B6D11',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '13px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'background 0.2s',
+  },
+};
 
 export default BrowsePanel;

@@ -1,144 +1,360 @@
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 function PostPanel({ switchTab }) {
-  const [selectedType, setSelectedType] = useState('donation');
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [freshnessWindow, setFreshnessWindow] = useState('Within 2 hours');
-  const [customFreshness, setCustomFreshness] = useState('');
+  const { user } = useAuth();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [expiryTime, setExpiryTime] = useState('1');
+  const [category, setCategory] = useState('vegetables');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
-  const selectType = (type) => {
-    setSelectedType(type);
-  };
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess(false);
 
-  const handleFreshnessChange = (e) => {
-    setFreshnessWindow(e.target.value);
-    if (e.target.value !== 'Custom') {
-      setCustomFreshness('');
+    if (!title.trim() || !description.trim() || !price.trim() || !quantity.trim()) {
+      setError('Please fill in all required fields.');
+      return;
     }
+
+    // Save posting to localStorage
+    const listings = JSON.parse(localStorage.getItem('foodListings') || '[]');
+    const newListing = {
+      id: Date.now(),
+      title,
+      description,
+      price,
+      quantity,
+      expiryTime,
+      category,
+      provider: user?.displayName || user?.email?.split('@')[0] || 'Anonymous Seller',
+      postedAt: new Date().toISOString(),
+      coordinates: [28.7041, 77.1025], // Default location
+    };
+
+    listings.push(newListing);
+    localStorage.setItem('foodListings', JSON.stringify(listings));
+
+    setSuccess(true);
+    setTitle('');
+    setDescription('');
+    setPrice('');
+    setQuantity('');
+    setExpiryTime('1');
+    setCategory('vegetables');
+
+    setTimeout(() => {
+      setSuccess(false);
+      switchTab('browse');
+    }, 2000);
   };
 
-  const submitListing = () => {
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      switchTab('browse');
-    }, 2500);
-  };
+  if (!user) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.authPrompt}>
+          <div style={styles.promptBox}>
+            <p style={styles.promptText}>👤 Please sign in to list food items</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="panel active">
-      <div className="post-form">
-        <div className="form-title">List surplus food</div>
-        <div className="form-subtitle">Help reduce waste. Share details about what you have and when it's available for pickup.</div>
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h1 style={styles.title}>Post Surplus Food</h1>
+        <p style={styles.subtitle}>List your surplus food items and help reduce waste</p>
+      </div>
 
-        <div className={`success-msg ${showSuccess ? 'show' : ''}`}>
-          <h3>Listing posted!</h3>
-          <p>Your surplus food has been listed. Nearby users and orgs will be notified.</p>
-        </div>
+      <div style={styles.formWrapper}>
+        <form onSubmit={handleSubmit} style={styles.form}>
+          {error && <div style={styles.errorMsg}>{error}</div>}
+          {success && <div style={styles.successMsg}>✓ Food item posted successfully! Redirecting...</div>}
 
-        <div id="post-form-fields" style={{display: showSuccess ? 'none' : 'block'}}>
-          <div className="form-section">
-            <div className="field">
-              <label>Listing type</label>
-              <div className="type-selector">
-                <div className={`type-opt ${selectedType === 'donation' ? 'selected' : ''}`} onClick={() => selectType('donation')}>
-                  <span className="opt-icon">🤲</span>Free / Donation
-                </div>
-                <div className={`type-opt ${selectedType === 'discounted' ? 'selected' : ''}`} onClick={() => selectType('discounted')}>
-                  <span className="opt-icon">🏷️</span>Discounted sale
-                </div>
-                <div className={`type-opt ${selectedType === 'community' ? 'selected' : ''}`} onClick={() => selectType('community')}>
-                  <span className="opt-icon">🏛️</span>Community org
-                </div>
-              </div>
+          <div style={styles.field}>
+            <label style={styles.fieldLabel}>Food Item Name *</label>
+            <input
+              type="text"
+              style={styles.fieldInput}
+              placeholder="e.g., Fresh Vegetables Mix"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.fieldLabel}>Description *</label>
+            <textarea
+              style={{ ...styles.fieldInput, minHeight: '100px', resize: 'vertical' }}
+              placeholder="Describe your food items, condition, and any special details..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
+          </div>
+
+          <div style={styles.fieldRow}>
+            <div style={styles.field}>
+              <label style={styles.fieldLabel}>Category *</label>
+              <select
+                style={styles.fieldInput}
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                <option value="vegetables">🥬 Vegetables</option>
+                <option value="fruits">🍎 Fruits</option>
+                <option value="cooked">🍛 Cooked Food</option>
+                <option value="bakery">🥖 Bakery</option>
+                <option value="dairy">🥛 Dairy</option>
+                <option value="other">📦 Other</option>
+              </select>
+            </div>
+
+            <div style={styles.field}>
+              <label style={styles.fieldLabel}>Quantity *</label>
+              <input
+                type="text"
+                style={styles.fieldInput}
+                placeholder="e.g., 5 kg, 10 pieces"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                required
+              />
             </div>
           </div>
 
-          <div className="form-section">
-            <div className="field-group">
-              <div className="field">
-                <label>Food item name</label>
-                <input placeholder="e.g. Vegetable biryani" />
-              </div>
-              <div className="field">
-                <label>Food category</label>
-                <select>
-                  <option>Cooked meals</option>
-                  <option>Baked goods</option>
-                  <option>Produce / vegetables</option>
-                  <option>Dairy products</option>
-                  <option>Packaged / pantry</option>
-                  <option>Beverages</option>
-                  <option>Mixed / assorted</option>
-                </select>
+          <div style={styles.fieldRow}>
+            <div style={styles.field}>
+              <label style={styles.fieldLabel}>Price *</label>
+              <div style={styles.priceInput}>
+                <span style={styles.currencySymbol}>₹</span>
+                <input
+                  type="number"
+                  style={styles.fieldInputNoLeft}
+                  placeholder="0"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  required
+                  min="0"
+                />
               </div>
             </div>
-            <div className="field-group">
-              <div className="field">
-                <label>Quantity</label>
-                <input placeholder="e.g. 10 portions, 3 kg" />
-              </div>
-              <div className="field">
-                <label>Freshness window</label>
-                <select value={freshnessWindow} onChange={handleFreshnessChange}>
-                  <option>Within 2 hours</option>
-                  <option>Within 4 hours</option>
-                  <option>Today only</option>
-                  <option>Until tomorrow</option>
-                  <option>2–3 days</option>
-                  <option>Custom</option>
-                </select>
-                {freshnessWindow === 'Custom' && (
-                  <input
-                    type="text"
-                    placeholder="e.g. Within 6 hours, Until Friday"
-                    value={customFreshness}
-                    onChange={(e) => setCustomFreshness(e.target.value)}
-                    style={{marginTop: '8px'}}
-                  />
-                )}
-              </div>
-            </div>
-            <div className="field">
-              <label>Description / notes</label>
-              <textarea rows="2" placeholder="Ingredients, allergens, packaging, storage info..."></textarea>
+
+            <div style={styles.field}>
+              <label style={styles.fieldLabel}>Available For *</label>
+              <select
+                style={styles.fieldInput}
+                value={expiryTime}
+                onChange={(e) => setExpiryTime(e.target.value)}
+              >
+                <option value="0.5">30 minutes</option>
+                <option value="1">1 hour</option>
+                <option value="2">2 hours</option>
+                <option value="4">4 hours</option>
+                <option value="8">8 hours</option>
+                <option value="24">1 day</option>
+              </select>
             </div>
           </div>
 
-          <div className="form-section">
-            <div className="field-group">
-              <div className="field">
-                <label>Pickup location</label>
-                <input placeholder="Address or landmark" />
-              </div>
-              <div className="field">
-                <label>Pickup window</label>
-                <input placeholder="e.g. 3 PM – 6 PM today" />
-              </div>
-            </div>
-            <div className="field-group">
-              <div className="field">
-                <label>Your name / org</label>
-                <input placeholder="Restaurant, store, or your name" />
-              </div>
-              <div className="field">
-                <label>Contact</label>
-                <input placeholder="Phone or email" />
-              </div>
-            </div>
-            {selectedType === 'discounted' && (
-              <div className="field" id="price-field">
-                <label>Discounted price</label>
-                <input placeholder="e.g. ₹50 per box" />
-              </div>
-            )}
+          <div style={styles.fieldNote}>
+            <strong>Important:</strong> All food items must comply with local food safety guidelines. Cooked food must be consumed within safe time limits.
           </div>
 
-          <button className="btn btn-primary" style={{width:'100%',padding:'11px'}} onClick={submitListing}>Post listing</button>
+          <button type="submit" style={styles.submitBtn}>
+            Post Food Item
+          </button>
+        </form>
+
+        <div style={styles.infoBox}>
+          <h3 style={styles.infoTitle}>📋 Tips for Successful Listings</h3>
+          <ul style={styles.infoList}>
+            <li>Be clear about the food type and quantity</li>
+            <li>Mention any dietary information (vegan, allergens, etc.)</li>
+            <li>Set realistic prices - lower prices get claimed faster</li>
+            <li>Be honest about quality and condition</li>
+            <li>Respond quickly to claims</li>
+            <li>Follow food safety guidelines strictly</li>
+          </ul>
         </div>
       </div>
     </div>
   );
 }
+
+const styles = {
+  container: {
+    padding: '24px',
+    maxWidth: '900px',
+    margin: '0 auto',
+    background: '#f7f6f2',
+    minHeight: 'calc(100vh - 80px)',
+  },
+  authPrompt: {
+    display: 'flex',
+    justifyContent: 'center',
+    padding: '40px 20px',
+  },
+  promptBox: {
+    background: '#ffffff',
+    border: '2px dashed #639922',
+    borderRadius: '14px',
+    padding: '32px',
+    textAlign: 'center',
+    maxWidth: '400px',
+  },
+  promptText: {
+    color: '#3B6D11',
+    fontSize: '16px',
+    fontWeight: '500',
+    margin: '0',
+  },
+  header: {
+    marginBottom: '32px',
+    textAlign: 'center',
+  },
+  title: {
+    fontSize: '32px',
+    fontWeight: '700',
+    color: '#2C2C2A',
+    margin: '0 0 8px 0',
+  },
+  subtitle: {
+    fontSize: '14px',
+    color: '#888780',
+    margin: '0',
+  },
+  formWrapper: {
+    display: 'grid',
+    gridTemplateColumns: '2fr 1fr',
+    gap: '24px',
+  },
+  form: {
+    background: '#ffffff',
+    borderRadius: '14px',
+    padding: '24px',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+  },
+  errorMsg: {
+    background: '#FCEBEB',
+    border: '0.5px solid #F7C1C1',
+    color: '#A32D2D',
+    padding: '12px 16px',
+    borderRadius: '8px',
+    marginBottom: '16px',
+    fontSize: '13px',
+  },
+  successMsg: {
+    background: '#E1F5EE',
+    border: '0.5px solid #1D9E75',
+    color: '#0F6E56',
+    padding: '12px 16px',
+    borderRadius: '8px',
+    marginBottom: '16px',
+    fontSize: '13px',
+    fontWeight: '500',
+  },
+  field: {
+    marginBottom: '16px',
+  },
+  fieldLabel: {
+    display: 'block',
+    fontSize: '12px',
+    fontWeight: '600',
+    color: '#2C2C2A',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    marginBottom: '8px',
+  },
+  fieldInput: {
+    width: '100%',
+    padding: '10px 12px',
+    border: '0.5px solid #e0ded8',
+    borderRadius: '8px',
+    fontSize: '13px',
+    fontFamily: '"DM Sans", sans-serif',
+    outline: 'none',
+    transition: 'border-color 0.2s',
+  },
+  fieldInputNoLeft: {
+    width: '100%',
+    padding: '10px 12px',
+    border: 'none',
+    borderRadius: '0 8px 8px 0',
+    fontSize: '13px',
+    fontFamily: '"DM Sans", sans-serif',
+    outline: 'none',
+  },
+  fieldRow: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px',
+  },
+  priceInput: {
+    display: 'flex',
+    alignItems: 'center',
+    border: '0.5px solid #e0ded8',
+    borderRadius: '8px',
+    overflow: 'hidden',
+  },
+  currencySymbol: {
+    padding: '0 12px',
+    background: '#f1efe8',
+    color: '#2C2C2A',
+    fontWeight: '600',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  fieldNote: {
+    background: '#EAF3DE',
+    border: '0.5px solid #639922',
+    padding: '12px 16px',
+    borderRadius: '8px',
+    fontSize: '12px',
+    color: '#3B6D11',
+    marginBottom: '16px',
+    lineHeight: '1.5',
+  },
+  submitBtn: {
+    width: '100%',
+    padding: '14px 16px',
+    background: '#3B6D11',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'background 0.2s',
+  },
+  infoBox: {
+    background: '#ffffff',
+    borderRadius: '14px',
+    padding: '20px',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+  },
+  infoTitle: {
+    fontSize: '16px',
+    fontWeight: '600',
+    color: '#2C2C2A',
+    margin: '0 0 12px 0',
+  },
+  infoList: {
+    margin: '0',
+    paddingLeft: '20px',
+    fontSize: '13px',
+    color: '#888780',
+    lineHeight: '1.8',
+  },
+};
 
 export default PostPanel;
