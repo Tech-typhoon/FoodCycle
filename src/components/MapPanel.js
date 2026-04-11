@@ -51,10 +51,10 @@ function MapPanel({ openClaim }) {
       id: 4,
       title: 'Fresh Fruits',
       provider: 'Organic Fruits Store',
-      price: '₹180',
-      coordinates: [28.6692, 77.0601],
+      price: '₹50',
+      coordinates: [22.774705298649963, 86.18253161059037],
       dist: '1.8 km',
-      until_text: '05:30 PM',
+      until_text: '11:30 AM',
       image: '🍎',
     },
   ];

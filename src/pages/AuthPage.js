@@ -53,6 +53,22 @@ function AuthPage({ onSuccess }) {
     }
   };
 
+  const handleGoogleAuth = async () => {
+    setError('');
+    setLoading(true);
+
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      onSuccess?.();
+    } catch (err) {
+      const errorMessage = getFriendlyErrorMessage(err.code);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getFriendlyErrorMessage = (errorCode) => {
     switch (errorCode) {
       case 'auth/user-not-found':

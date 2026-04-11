@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import BrowsePanel from './components/BrowsePanel';
@@ -93,13 +93,6 @@ function App() {
   return (
     <AuthProvider>
       <AppContent />
-    </AuthProvider>
-  );
-}
-function App() {
-  return (
-    <AuthProvider>
-      {/* Your full app UI here */}
     </AuthProvider>
   );
 }
