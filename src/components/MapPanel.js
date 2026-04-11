@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -14,14 +14,16 @@ L.Icon.Default.mergeOptions({
 
 const defaultCenter = [22.57, 88.36];
 
-function LocationUpdater({ location }) {
+function LocationUpdater({ location, selectedItem }) {
   const map = useMap();
 
   useEffect(() => {
-    if (location) {
+    if (selectedItem && selectedItem.position) {
+      map.setView(selectedItem.position, 16, { animate: true });
+    } else if (location) {
       map.setView(location, 14, { animate: true });
     }
-  }, [location, map]);
+  }, [location, selectedItem, map]);
 
   return null;
 }
@@ -31,6 +33,7 @@ function MapPanel({ openClaim }) {
   const [locationError, setLocationError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -128,7 +131,7 @@ function MapPanel({ openClaim }) {
             scrollWheelZoom={true}
             style={{ width: '100%', minHeight: '460px', borderRadius: '14px' }}
           >
-            <LocationUpdater location={location} />
+            <LocationUpdater location={location} selectedItem={selectedItem} />
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
             {filteredItems.map((item) => (
@@ -136,13 +139,16 @@ function MapPanel({ openClaim }) {
                 key={item.id}
                 position={item.position}
                 eventHandlers={{
-                  click: () => openClaim({
-                    title: item.title,
-                    provider: item.source,
-                    dist: item.dist,
-                    price: item.price,
-                    until: item.until,
-                  }),
+                  click: () => {
+                    setSelectedItem(item);
+                    openClaim({
+                      title: item.title,
+                      provider: item.source,
+                      dist: item.dist,
+                      price: item.price,
+                      until: item.until,
+                    });
+                  },
                 }}
               >
                 <Popup>
@@ -153,14 +159,20 @@ function MapPanel({ openClaim }) {
               </Marker>
             ))}
 
-            {location && (
-              <CircleMarker
-                center={location}
-                pathOptions={{ color: '#0F6E56', fillColor: '#0F6E56', fillOpacity: 0.8 }}
-                radius={10}
-              >
-                <Popup>You are here</Popup>
-              </CircleMarker>
+            {selectedItem && location && (
+              <>
+                <CircleMarker
+                  center={location}
+                  pathOptions={{ color: '#0F6E56', fillColor: '#0F6E56', fillOpacity: 0.8 }}
+                  radius={10}
+                >
+                  <Popup>You are here</Popup>
+                </CircleMarker>
+                <Polyline
+                  positions={[location, selectedItem.position]}
+                  pathOptions={{ color: '#FF6B35', weight: 3, opacity: 0.7 }}
+                />
+              </>
             )}
           </MapContainer>
 
@@ -211,7 +223,10 @@ function MapPanel({ openClaim }) {
             <div
               key={item.id}
               className="map-item"
-              onClick={() => openClaim({ title: item.title, provider: item.source, dist: item.dist, price: item.price, until: item.until })}
+              onClick={() => {
+                setSelectedItem(item);
+                openClaim({ title: item.title, provider: item.source, dist: item.dist, price: item.price, until: item.until });
+              }}
             >
               <div className="map-item-title">{item.title}</div>
               <div className="map-item-dist">{item.source} · {item.dist}</div>
