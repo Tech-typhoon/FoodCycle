@@ -2,9 +2,15 @@ import React, { useState } from 'react';
 
 function ClaimModal({ data, closeModal }) {
   const [name, setName] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [address, setAddress] = useState('');
 
   const confirmClaim = () => {
-    alert('Claim confirmed! Check your contact for pickup details.');
+    if (!name.trim() || !mobile.trim() || !address.trim()) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+    alert(`Claim confirmed! Check your contact for pickup details.\n\nName: ${name}\nMobile: ${mobile}\nAddress: ${address}`);
     closeModal();
   };
 
@@ -25,6 +31,14 @@ function ClaimModal({ data, closeModal }) {
         <div className="field" style={{marginBottom:'12px'}}>
           <label style={{fontSize:'12px',fontWeight:'500',color:'var(--color-text-secondary)',textTransform:'uppercase',letterSpacing:'0.04em',display:'block',marginBottom:'5px'}}>Your name</label>
           <input style={{fontFamily:'var(--font-body)',fontSize:'13px',padding:'9px 12px',border:'0.5px solid var(--color-border-tertiary)',borderRadius:'var(--radius-sm)',background:'var(--color-background-primary)',color:'var(--color-text-primary)',width:'100%',outline:'none'}} placeholder="Enter your name or org" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="field" style={{marginBottom:'12px'}}>
+          <label style={{fontSize:'12px',fontWeight:'500',color:'var(--color-text-secondary)',textTransform:'uppercase',letterSpacing:'0.04em',display:'block',marginBottom:'5px'}}>Mobile number</label>
+          <input style={{fontFamily:'var(--font-body)',fontSize:'13px',padding:'9px 12px',border:'0.5px solid var(--color-border-tertiary)',borderRadius:'var(--radius-sm)',background:'var(--color-background-primary)',color:'var(--color-text-primary)',width:'100%',outline:'none'}} placeholder="Enter your mobile number" value={mobile} onChange={(e) => setMobile(e.target.value)} />
+        </div>
+        <div className="field" style={{marginBottom:'12px'}}>
+          <label style={{fontSize:'12px',fontWeight:'500',color:'var(--color-text-secondary)',textTransform:'uppercase',letterSpacing:'0.04em',display:'block',marginBottom:'5px'}}>Address</label>
+          <textarea style={{fontFamily:'var(--font-body)',fontSize:'13px',padding:'9px 12px',border:'0.5px solid var(--color-border-tertiary)',borderRadius:'var(--radius-sm)',background:'var(--color-background-primary)',color:'var(--color-text-primary)',width:'100%',outline:'none',resize:'vertical',minHeight:'60px'}} placeholder="Enter your pickup address" value={address} onChange={(e) => setAddress(e.target.value)} />
         </div>
         <div className="modal-actions">
           <button className="btn" style={{flex:1}} onClick={closeModal}>Cancel</button>
