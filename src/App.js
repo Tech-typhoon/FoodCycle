@@ -96,3 +96,14 @@ function App() {
     </AuthProvider>
   );
 }
+function App() {
+  return (
+    <AuthProvider>
+      {/* Your full app UI here */}
+    </AuthProvider>
+  );
+}
+
+export default App;
+
+ 

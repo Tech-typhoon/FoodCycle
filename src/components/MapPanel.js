@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import { useAuth } from '../context/AuthContext';
 
@@ -74,6 +74,20 @@ function MapPanel({ openClaim }) {
     }
   }, []);
 
+  // Calculate distance between two coordinates in kilometers
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the Earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
+    return distance.toFixed(2); // Return distance in km with 2 decimal places
+  };
+
   if (!user) {
     return (
       <div style={styles.container}>
@@ -123,6 +137,19 @@ function MapPanel({ openClaim }) {
               <Popup>{item.image} {item.title}</Popup>
             </Marker>
           ))}
+
+          {/* Connection line when item is selected */}
+          {selectedItem && (
+            <Polyline
+              positions={[userLocation, selectedItem.coordinates]}
+              pathOptions={{
+                color: '#FF6B35',
+                weight: 3,
+                opacity: 0.8,
+                dashArray: '10, 10'
+              }}
+            />
+          )}
         </MapContainer>
       </div>
 
@@ -142,8 +169,22 @@ function MapPanel({ openClaim }) {
 
           <div style={styles.sidebarDetails}>
             <div style={styles.detailRow}>
+              <span style={styles.detailLabel}>Your Location</span>
+              <span style={styles.detailValue}>
+                {userLocation[0].toFixed(4)}, {userLocation[1].toFixed(4)}
+              </span>
+            </div>
+            <div style={styles.detailRow}>
+              <span style={styles.detailLabel}>Food Location</span>
+              <span style={styles.detailValue}>
+                {selectedItem.coordinates[0].toFixed(4)}, {selectedItem.coordinates[1].toFixed(4)}
+              </span>
+            </div>
+            <div style={styles.detailRow}>
               <span style={styles.detailLabel}>Distance</span>
-              <span style={styles.detailValue}>{selectedItem.dist}</span>
+              <span style={styles.detailValue}>
+                {calculateDistance(userLocation[0], userLocation[1], selectedItem.coordinates[0], selectedItem.coordinates[1])} km
+              </span>
             </div>
             <div style={styles.detailRow}>
               <span style={styles.detailLabel}>Price</span>
@@ -162,8 +203,17 @@ function MapPanel({ openClaim }) {
               setSelectedItem(null);
             }}
           >
-            Claim this item
+            🚚 Claim & Start Delivery
           </button>
+
+          <div style={styles.claimInfo}>
+            <p style={styles.claimInfoText}>
+              📍 Your live location will be shared with the provider for pickup coordination
+            </p>
+            <p style={styles.claimInfoText}>
+              ⏱️ Track delivery progress in real-time after claiming
+            </p>
+          </div>
         </div>
       )}
     </div>
@@ -278,6 +328,19 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'background 0.2s',
+  },
+  claimInfo: {
+    marginTop: '16px',
+    padding: '12px',
+    background: '#f1efe8',
+    borderRadius: '8px',
+    border: '1px solid #e0ded8',
+  },
+  claimInfoText: {
+    fontSize: '11px',
+    color: '#666',
+    margin: '4px 0',
+    lineHeight: '1.4',
   },
 };
 
